@@ -1,0 +1,25 @@
+{
+  "name": "follower-protect",
+  "version": "1.0.0",
+  "description": "Follower protect is a tool to allow you to easily search the posts of your followers to enable more efficient blocking of unwanted attention",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lily418/follower-protect.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Lily418/follower-protect/issues"
+  },
+  "homepage": "https://github.com/Lily418/follower-protect#readme",
+  "dependencies": {
+    "chalk": "^4",
+    "cheerio": "^1.0.0-rc.10",
+    "compromise": "^13.11.4",
+    "tumblr.js": "^3.0.0"
+  }
+}
