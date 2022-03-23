@@ -1,2 +1,5 @@
 node_modules/
 word-list.txt
+
+
+www.tumblr.com/oauth2/authorize?client_id=WdJRCIsvQSP0iSLt02fBYpYEk5N0aJ7ayTZDgXBSEGLWPD5kar&response_type=code&scope=basic&state=state&redirect_uri=https://pettr.app/tumblr/oauth

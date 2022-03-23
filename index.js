@@ -1,89 +1,121 @@
 const fs = require("fs")
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
-const { window } = new JSDOM();
 const tumblr = require('tumblr.js');
 const cheerio = require('cheerio');
 const nlp = require('compromise')
 const chalk = require('chalk')
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const uri = `mongodb+srv://lily:${encodeURIComponent(process.env.TUMBLR_MONGO_PASSWORD)}@cluster0.gp6km.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`
+const mongo = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-var client = tumblr.createClient({
-    consumer_key: process.env.TUMBLR_CONSUMER_KEY,
-    consumer_secret: process.env.TUMBLR_CONSUMER_SECRET,
-    token: process.env.TUMBLR_TOKEN,
-    token_secret: process.env.TUMBLR_TOKEN_SECRET
+
+const tumblrClient = tumblr.createClient({
+    credentials: {
+        consumer_key: 'WdJRCIsvQSP0iSLt02fBYpYEk5N0aJ7ayTZDgXBSEGLWPD5kar',
+        consumer_secret: 'QnUiZiWbBYZte69lkaD2BrpIVmCuyFEyLrHajvcWrRPnaeNfsx',
+        token: '9eGwsiYt4KSJZMZudDk5oLMmuGGUTtypuPnxZ0IYzauOD4kE3C',
+        token_secret: 'EdSrFFlIP32BHQpNZ8gpkmUVdxSTE2RFB1M1PdGRvCnrlQE786'
+    }, returnPromises: true
 });
 
-const matchWords = (htmlText) => {
+const matchWords = (htmlText, filteredWords) => {
     const $ = cheerio.load(htmlText);
     const text = $.text()
     const doc = nlp(text)
 
-    let anyMatches = false
+    let matchesListLength = 0
 
     filteredWords.forEach((word) => {
         const matches = doc.match(word)
-        matches.replaceWith(chalk.red(word))
-        if(matches.list.length > 0) {
-            anyMatches = true
-        }
+        matches.replaceWith(`<span style="color: red;">${word}</span>`)
+        matchesListLength = matches.list.length
     })
 
-    if(anyMatches) {
-        return {
-            highlightedText: doc.text(), match: true
+    return {
+            highlightedText: doc.text(), matchesListLength
         }
-    } else {
-        return {
-            highlightedText: text, match: false
-        }
-    }
+
 
 }
 
-const printMatch = ({highlightedText, match}, url ) => {
-    if(match) {
-        console.log(chalk.green("--------------------"))
-        console.log(chalk.green("url: " + url))
-        console.log(highlightedText)
-    }
-}
 
-
-// Make the request
-client.blogFollowers('blognamehere.tumblr.com', async (err, follower) => {
+const scanFollowers = async (follower) => {
 
     const wordList = fs.readFileSync("./word-list.txt", "utf-8").split("\n")
 
-    console.log("wordList", wordList)
+    return await Promise.all(follower.users.map(async (user) => {
+        const blog = await tumblrClient.blogPosts(user.name, { limit: 50 })
 
-    follower.users.map(async (user) => {
         console.log(chalk.cyanBright("========================"))
         console.log(chalk.cyanBright("User: " + user.url))
 
 
-        client.blogPosts(user.name, { limit: 50 }, (err, blog) => {
+        const bioMatch = matchWords(blog.blog.description, wordList)
 
-            printMatch(matchWords(blog.blog.description), "in bio")
+        const posts =  blog.posts.map((post) => {
+
+            if (post.type === "photo" || post.type === "video" || post.type === "audio") {
+                return
+            }
+
+            const htmlText = post.body || post.caption || post.description || post.summary || post.answer || post.question
+            if (!htmlText) {
+                console.error(post)
+                throw Error("Cannot parse")
+            }
+
+            const postMatch = matchWords(htmlText, wordList)
+            if(postMatch.matchesListLength > 0) {
+                return postMatch.highlightedText
+            } else {
+                return undefined
+            }
+        }).filter((x) => {
+            return x
+        }).concat(bioMatch.matchesListLength > 0 ? bioMatch.highlightedText : [])
+
+        return {
+            user, posts
+        }
+    }))
+}
 
 
-            blog.posts.map((post) => {
+// Make the request
+const f = async () => {
 
-                if(post.type === "photo") {
-                    return
-                }
+    await mongo.connect()
+    const collection = mongo.db("test").collection("devices");
+    let offset = 0
+    let hasNext = true
 
-                const htmlText = post.body || post.caption || post.answer
-                if(!htmlText) {
-                    console.error(post)
-                    throw Error("Cannot parse")
-                }
+    while(hasNext) {
+        const allFollowers = await tumblrClient.blogFollowers('queercutlureis.tumblr.com', { limit: 20, offset })
+    
+        const followerRecords = await Promise.all(allFollowers.users.map(async (follower) => {
+            return await mongo.db("tumblr").collection("users").findOne({ "_id": follower.url })
+        }))
 
-                printMatch(matchWords(htmlText), post.post_url)
-
-
-                
-            })
+        allFollowers.users = allFollowers.users.filter((user, index) => {
+            return followerRecords[index] === null
         })
-    })
-});
+
+        const followerScans = await scanFollowers(allFollowers)
+
+        await Promise.all(followerScans.map(async ({user, posts}) => {
+            return mongo.db("tumblr").collection("users").updateOne({ "_id": user.url }, { $set: { "_id": user.url, user, posts, date: new Date() } }, { upsert: true })
+        }))
+        if (allFollowers._links.next.href) {
+            offset += 20
+        } else {
+            hasNext = false
+        }
+    }
+
+    mongo.close()
+
+
+
+}
+
+f()
+
