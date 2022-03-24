@@ -71,7 +71,7 @@ const scanFollowers = async (follower) => {
             }
         }).filter((x) => {
             return x
-        }).concat(bioMatch.matchesListLength > 0 ? bioMatch.highlightedText : [])
+        }).concat(bioMatch.matchesListLength > 0 ? [bioMatch.highlightedText] : [])
 
         return {
             bio: blog.blog.description, user, posts
