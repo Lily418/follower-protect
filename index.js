@@ -74,7 +74,7 @@ const scanFollowers = async (follower) => {
         }).concat(bioMatch.matchesListLength > 0 ? bioMatch.highlightedText : [])
 
         return {
-            user, posts
+            bio: blog.blog.description, user, posts
         }
     }))
 }
@@ -101,8 +101,8 @@ const f = async () => {
 
         const followerScans = await scanFollowers(allFollowers)
 
-        await Promise.all(followerScans.map(async ({user, posts}) => {
-            return mongo.db("tumblr").collection("users").updateOne({ "_id": user.url }, { $set: { "_id": user.url, user, posts, date: new Date() } }, { upsert: true })
+        await Promise.all(followerScans.map(async ({user, posts, bio}) => {
+            return mongo.db("tumblr").collection("users").updateOne({ "_id": user.url }, { $set: { "_id": user.url, bio, user, posts, date: new Date() } }, { upsert: true })
         }))
         if (allFollowers._links.next.href) {
             offset += 20
