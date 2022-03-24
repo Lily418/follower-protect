@@ -15,6 +15,12 @@ app.get('/', async (req, res) => {
   res.send(docs)
 })
 
+app.post('/flag/:user/:color', async (req, res) => {
+  await mongo.connect()
+  const user = mongo.db("tumblr").collection("users").updateOne({ "_id": req.params.user }, { $set: { "flag": req.params.color } }, { upsert: false })
+  res.send(user)
+})
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })

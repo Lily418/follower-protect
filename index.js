@@ -58,12 +58,14 @@ const scanFollowers = async (follower) => {
             }
 
             const htmlText = post.body || post.caption || post.description || post.summary || post.answer || post.question
+
             if (!htmlText) {
                 console.error(post)
                 throw Error("Cannot parse")
             }
 
             const postMatch = matchWords(htmlText, wordList)
+            console.log(postMatch)
             if(postMatch.matchesListLength > 0) {
                 return postMatch.highlightedText
             } else {
