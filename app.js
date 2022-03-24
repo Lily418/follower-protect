@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 const cors = require('cors')
-const port = 3000
+const port = 8000
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://lily:${encodeURIComponent(`85e^soUMou6@eaMhHil%%9fO%Ct5xphwdAFBEAknNfmxg#TXh2058rcWtpu%H!U7`)}@cluster0.gp6km.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`
 const mongo = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
