@@ -10,7 +10,7 @@ app.use(cors())
 
 app.get('/', async (req, res) => {
   await mongo.connect()
-  const docs = await mongo.db("tumblr").collection("users").find({}).toArray()
+  const docs = await mongo.db("tumblr").collection("users").find({ "blocked": { "$ne": true }}).toArray()
   console.log(docs)
   res.send(docs)
 })
