@@ -124,7 +124,7 @@ const f = async () => {
 
         await Promise.all(allFollowers.users.map(async (user) => {
             console.log(user)
-            return mongo.db("tumblr").collection("users").updateOne({ "_id": user.url }, { $set: { "_id": user.url, date: new Date() } }, { upsert: true })
+            return mongo.db("tumblr").collection("users").updateOne({ "_id": user.url }, { $set: { "_id": user.url, user, date: new Date() } }, { upsert: true })
         }))
         if (allFollowers._links?.next.href) {
             offsetFollowers += 20
