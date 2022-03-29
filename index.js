@@ -91,21 +91,21 @@ const f = async () => {
 
     let hasNextBlocks = true
     let offsetBlocks = 0
-    while(hasNextBlocks) {
-        const blocks = await tumblrClient.getRequest(`/v2/blog/${'queercutlureis.tumblr.com'}/blocks`, { limit: 20, offset: offsetBlocks}); 
+    // while(hasNextBlocks) {
+    //     const blocks = await tumblrClient.getRequest(`/v2/blog/${'queercutlureis.tumblr.com'}/blocks`, { limit: 20, offset: offsetBlocks}); 
        
 
-        await Promise.all(blocks.blocked_tumblelogs.map(async (blockedBlog) => {
-            console.log(`BLOCKED 🔨 ${blockedBlog.url}`)
-            return await mongo.db("tumblr").collection("users").updateOne({ "_id": blockedBlog.url }, { $set: { "_id": blockedBlog.url, blocked: true } }, { upsert: true })
-        }))
+    //     await Promise.all(blocks.blocked_tumblelogs.map(async (blockedBlog) => {
+    //         console.log(`BLOCKED 🔨 ${blockedBlog.url}`)
+    //         return await mongo.db("tumblr").collection("users").updateOne({ "_id": blockedBlog.url }, { $set: { "_id": blockedBlog.url, blocked: true } }, { upsert: true })
+    //     }))
 
-        if (blocks._links?.next.href) {
-            offsetBlocks += 20
-        } else {
-            hasNextBlocks = false
-        }
-    }
+    //     if (blocks._links?.next.href) {
+    //         offsetBlocks += 20
+    //     } else {
+    //         hasNextBlocks = false
+    //     }
+    // }
 
 
     let offsetFollowers = 0
@@ -120,10 +120,11 @@ const f = async () => {
             return followerRecords[index] === null
         })
 
-        const followerScans = await scanFollowers(allFollowers)
+        // const followerScans = await scanFollowers(allFollowers)
 
-        await Promise.all(followerScans.map(async ({user, posts, bio}) => {
-            return mongo.db("tumblr").collection("users").updateOne({ "_id": user.url }, { $set: { "_id": user.url, bio, user, posts, date: new Date() } }, { upsert: true })
+        await Promise.all(allFollowers.users.map(async (user) => {
+            console.log(user)
+            return mongo.db("tumblr").collection("users").updateOne({ "_id": user.url }, { $set: { "_id": user.url, date: new Date() } }, { upsert: true })
         }))
         if (allFollowers._links?.next.href) {
             offsetFollowers += 20
